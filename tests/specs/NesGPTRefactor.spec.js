@@ -255,10 +255,13 @@ test.describe.serial('Prompt Library flow', () => {
         await page.getByPlaceholder('Give a descriptive name for this prompt').fill('EDITED Test Playwright');
 
         // Changes the prompt's assistant
+        if (Assistant !== 'NesGPT'){
         await page.locator('#prompt-modal-form > div > div:nth-child(2) > div:nth-child(1) > div > div > div.css-1wy0on6 > div').click();
         await safeClick(page.getByText(Assistant));
+        }
 
-        // Changes the prompt's model, but only if the assistant is NesGPT, because for the other assistants there is only one model available
+        // Changes the prompt's model, but only if the assistant is NesGPT 
+        // Because for the other assistants there is only one model available
         if (Assistant == 'NesGPT') {
             await safeClick(page.locator('#prompt-modal-form > div > div:nth-child(2) > div:nth-child(2) > div > div > div.css-1wy0on6 > div'));
             await safeClick(page.getByText(Model));
@@ -279,13 +282,15 @@ test.describe.serial('Prompt Library flow', () => {
         await expect(page.getByText('EDITED Test Playwright')).toBeVisible();
 
         // Edits the prompt again to change the assistant back to NesGPT and the model to Experimental (GPT-5.1), to make sure that the prompt is in the correct state for the next test
-        await safeClick(page.getByTitle('Modify this prompt'));
-        await safeClick(page.getByText('Edit' , {exact: true}));
-        await page.locator('#prompt-modal-form > div > div:nth-child(2) > div:nth-child(1) > div > div > div.css-1wy0on6 > div').click();
-        await safeClick(page.getByText('NesGPT' , {exact: true}));
-        await page.locator('#prompt-modal-form > div > div:nth-child(2) > div:nth-child(2) > div > div > div.css-1wy0on6 > div').click();
-        await safeClick(page.getByText('Experimental (GPT-5.1)'));
-        await safeClick(page.getByRole('button', { name: 'Save' }));
+        if (Assistant !== 'NesGPT') {
+            await safeClick(page.getByTitle('Modify this prompt'));
+            await safeClick(page.getByText('Edit' , {exact: true}));
+            await page.locator('#prompt-modal-form > div > div:nth-child(2) > div:nth-child(1) > div > div > div.css-1wy0on6 > div').click();
+            await safeClick(page.getByText('NesGPT' , {exact: true}));
+            await page.locator('#prompt-modal-form > div > div:nth-child(2) > div:nth-child(2) > div > div > div.css-1wy0on6 > div').click();
+            await safeClick(page.getByText('Experimental (GPT-5.1)'));
+            await safeClick(page.getByRole('button', { name: 'Save' }));
+        }
     });
 /* -------------------------------------------------------------------------- */
 /*       ✅ TEST 8 — Pin and Unpin prompt from Prompt Library                 */
