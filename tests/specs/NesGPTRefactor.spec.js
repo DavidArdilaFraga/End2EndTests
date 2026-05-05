@@ -32,9 +32,9 @@ test('Settings only appears for NesGPT', async ({ page }) => {
     const settings = page.locator('#sidebar-section-settings');
     await expect(settings).toBeVisible();
 
-    // Switch to L&C
-    const assistantLC = page.locator('#assistant-icon-1-db4d3fc9-7dbc-4992-98aa-7bfc410f7769');
-    await safeClick(assistantLC);
+    // Switch to Operations Knowledge
+    const assistantOKA = page.locator('#assistant-icon-1-3fa85f64-5717-4562-b3fc-2c963f66afa6');
+    await safeClick(assistantOKA);
 
     // Settings should not appear now
     await expect(settings).not.toBeVisible();
@@ -44,19 +44,19 @@ test('Settings only appears for NesGPT', async ({ page }) => {
 /* -------------------------------------------------------------------------- */
 /*                   ✅ TEST 2 — Pinning Assistants                           */
 /* -------------------------------------------------------------------------- */
-test('Unpin-Pin L&C assistant', async ({ page }) => {
+test('Unpin-Pin OKA assistant', async ({ page }) => {
 
     await openHome(page);
 
     await accessAssistants(page);
 
-    // Unpins the L&C assistant
+    // Unpins the OKA assistant
     const unpin = page.getByTestId('unpin-button');
     await safeClick(unpin);
 
     await page.waitForTimeout(2000);
 
-    // Pins the L&C assistant again by clicking the pin button of the first assistant in the list
+    // Pins the OKA assistant again by clicking the pin button of the first assistant in the list
     const pinnedFlag = page.getByText('PINNED', { exact: true });
 
     if (await pinnedFlag.isHidden()) {
