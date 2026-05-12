@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "test:e2e": "npx playwright test --project=e2e",
+    "test:smoke": "npx playwright test --project=smoke"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
