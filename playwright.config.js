@@ -51,7 +51,9 @@ projects: [
       dependencies: ['e2e-setup'],
       use: {
         storageState: 'playwright/.auth/user.json',
+        //...devices['Desktop Firefox'],
         ...devices['Desktop Chrome'],
+        headless: false, // If the test is run in Chrome, it needs to be headed. If it is in Firefox, it can be headless
       },
     },
 
