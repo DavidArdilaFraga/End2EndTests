@@ -2,6 +2,49 @@ const { test, expect } = require('@playwright/test');
 import { parseNesGPTResponse } from '../utils/smokeFunctions/parseNesGPTResponse';
 import { buildNesGPTPayload } from '../utils/smokeFunctions/PayloadNesGPT';
 import { validateBaseResponse, validateUsedTools, validateUsesAnyOfTools } from '../utils/smokeFunctions/SmokeTestValidations';
+import { saveParsedResultsAsTxt } from '../utils/smokeFunctions/nesgptReport';
+
+async function sendPromptAndParse(request, prompt, conversationId) {
+  const payload = buildNesGPTPayload({
+    prompt,
+    conversationId,
+    customPreferences: {
+      role: 'Dentist',
+      nesGptCustomBehaviorPrompt:
+        'Start and end ALL your responses with TEST...',
+      newChatsEnabled: false
+    }
+  });
+
+  const response = await request.post(
+    'https://nesgpt-np.genai.nestle.com/api/conversations',
+    {
+      headers: {
+        Authorization: `Bearer ${process.env.NES_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      data: payload
+    }
+  );
+
+  // ✅ Control HTTP
+  if (!response.ok()) {
+    throw new Error(
+      `❌ HTTP ${response.status()}\n${await response.text()}`
+    );
+  }
+
+  const raw = await response.text();
+
+  // ✅ Control SSE completo
+  if (!raw.includes('[DONE]')) {
+    throw new Error(`❌ Incomplete SSE response\n${raw}`);
+  }
+
+  const parsed = parseNesGPTResponse(raw);
+
+  return parsed;
+}
 
 test.describe('NesGPT API Smoke Tests', () => {
 
@@ -12,26 +55,11 @@ test.describe('NesGPT API Smoke Tests', () => {
     console.log('API Response:', responseBody);
     expect(response.status()).toBe(200);
   });
-
-  /*
-  test('Send prompt to NesGPT and receive a response', async ({ request }) => {
-        const payload = await request.post('https://nesgpt-np.genai.nestle.com/api/conversations', {
-            headers: {
-                Authorization: `Bearer ${process.env.NES_TOKEN}`
-            },
-            data: {
-                "message":{"content":"Tell me about Nestlé's vehicle rental policy. Also, show me 3 webs, with links, that help me improve my cooking skills","files":[]},"model":"basic","temperature":"balanced","assistant":{"id":"nesgpt","providerId":"nesgpt","name":"NesGPT"},"kind":"standard","userCustomPreferences":{"role":"Dentist","nesGptCustomBehaviorPrompt":"Start and end ALL your responses with TEST. Each TEST should be the only word in its line, so, after the first TEST, there is a line jump, and before the last TEST there is another line jump","newChatsEnabled":false}
-            }
-        })
-        const responseBody = await payload.text();
-        const parsedResponse = parseNesGPTResponse(responseBody);
-        console.log(parsedResponse);
-    })
-    */
     
     test('Send multiple prompts to NesGPT and validate responses', async ({ request }) => {
 
-        test.setTimeout(300000); // Test timeout set to 5 minutes to allow for multiple API calls and responses
+        test.setTimeout(10 * 60 * 1000); // Test timeout set to 10 minutes to allow for multiple API calls and responses
+        const results = []; // Array to store results of each prompt for reporting at the end
 
         const prompts = [
             //Tools list: bing_search_results, nestle_documents_from_sharepoint, user_information, tools_market
@@ -64,48 +92,47 @@ test.describe('NesGPT API Smoke Tests', () => {
                 expectations: {
                     mustUseAnyOfTools: ['nestle_documents_from_sharepoint', 'bing_search_results'] // This question is borderline, it might be answered with just the knowledge of the model, but ideally it should use at least one of these tools to provide a more up-to-date and accurate answer
                 }
+            },
+            {
+                text: "What does Nestlé think about racism? Also, summarize the document 'Unlocking the Language of Food Processing for Our Brands Guideline'",
+                expectations: {
+                    mustUseTools: ['nestle_documents_from_sharepoint']
+                }
+            },
+            {
+                text: "Give me some prompting tips specific for NesGPT",
+                expectations: {
+                    mustUseTools: ['nesgpt_help_center'] // This question is borderline, it might be answered with just the knowledge of the model, but ideally it should use at least one of these tools to provide a more up-to-date and accurate answer
+                }
+            },
+            {
+                text: "Is NesGPT compliant? Also, tell me why was the latest CEO of Nestlé appointed?",
+                expectations: {
+                    mustUseAnyOfTools: ['nestle_documents_from_sharepoint', 'bing_search_results', 'nesgpt_help_center'] // The first question should be answered with the nesgpt_help_center tool, but for the second question, it's borderline that the model might know the answer without using a tool, so we allow any of these three tools to be used
+                }
+            },
+            {
+                text: "List me the corporate tools that I can access. Also, tell me who is my manager's manager",
+                expectations: {
+                    mustUseTools: ['tools_market', 'user_information']
+                }
+            },
+            {
+                text: "List me 3 documents that talk about Nestlé's compromise with sustainability",
+                expectations: {
+                    mustUseTools: ['nestle_documents_from_sharepoint']
+                }
+            },
+            {
+                text: "Who is the latest Nespresso ambassador? Search it using internal sources",
+                expectations: {
+                    mustUseTools: ['nestle_documents_from_sharepoint']
+                }
             }
         ];
 
         for (const { text, expectations} of prompts) {
-            const payload = buildNesGPTPayload({
-            prompt: text,
-            customPreferences: {
-                role: 'Dentist',
-                nesGptCustomBehaviorPrompt:
-                'Start and end ALL your responses with TEST. Each TEST should be the only word in its line, so, after the first TEST, there is a line jump, and before the last TEST there is another line jump',
-                newChatsEnabled: false
-            }
-            });
-
-            const response = await request.post(
-            'https://nesgpt-np.genai.nestle.com/api/conversations',
-            {
-                headers: {
-                Authorization: `Bearer ${process.env.NES_TOKEN}`
-                },
-                data: payload
-            }
-            );
-
-            const responseText = await response.text();
-            //console.log(responseText);
-            /*
-            // ✅ 1. Status code
-            if (!response.ok()) {
-                throw new Error(
-                    `❌ API ERROR\n` +
-                    `Status: ${response.status()}\n` +
-                    `Body:\n${responseText}`
-                );
-            }
-
-            console.log('⬇️ RAW RESPONSE START ⬇️');
-            console.log(responseText);
-            console.log('⬆️ RAW RESPONSE END ⬆️');
-            */
-
-            const parsed = parseNesGPTResponse(responseText);
+            const parsed = await sendPromptAndParse(request, text, null);
 
             console.log('Parsed response:', parsed);
  
@@ -121,7 +148,66 @@ test.describe('NesGPT API Smoke Tests', () => {
                 validateUsesAnyOfTools(parsed, expectations.mustUseAnyOfTools);
             }
 
+            results.push({
+                prompt: text,
+                parsed
+            });
         }
+
+        saveParsedResultsAsTxt(results);
     });
     
+    //It is not working as today because NesGPT is treating each prompt as a new conversation
+    /*test('Multi-turn conversation with NesGPT', async ({ request }) => {
+
+        test.setTimeout(3 * 60 * 1000);
+
+        const prompts = [
+            "Tell me who Lionel Messi is",
+            "How many Ballon d'Or does he have?",
+            "Now summarize all that in 2 lines"
+        ];
+
+        let conversationId = undefined;
+
+        for (let i = 0; i < prompts.length; i++) {
+            const prompt = prompts[i];
+
+            console.log(`\n🧠 TURN ${i + 1}`);
+            console.log(`Prompt: ${prompt}`);
+
+            const parsed = await sendPromptAndParse(
+                request,
+                prompt,
+                conversationId
+            );
+
+            console.log('✅ Response received');
+
+            // ✅ 1. Guardar conversationId si es el primero
+            if (!conversationId) {
+                conversationId = parsed.conversationId;
+
+                expect(conversationId).toBeTruthy();
+                expect(conversationId).not.toBe('00000000-0000-0000-0000-000000000000');
+            }
+
+            // ✅ 2. Validar que sigue la misma conversación
+            expect(parsed.conversationId)
+            .toBe(conversationId);
+
+            // ✅ 3. Validar contenido
+            expect(parsed.content.length).toBeGreaterThan(0);
+
+            // ✅ 4. Log útil
+            console.log({
+            conversationId,
+            tools: parsed.tools,
+            model: parsed.model
+            });
+        }
+
+        console.log('\n✅ MULTI-TURN TEST COMPLETED SUCCESSFULLY');
+    });*/
+
 });

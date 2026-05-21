@@ -3,6 +3,7 @@
  */
 export function buildNesGPTPayload({
   prompt,
+  conversationId,
   model = 'basic',
   temperature = 'balanced',
   customPreferences,
@@ -17,6 +18,7 @@ export function buildNesGPTPayload({
       content: prompt,
       files: []
     },
+    conversationId,
     model,
     temperature,
     assistant,
