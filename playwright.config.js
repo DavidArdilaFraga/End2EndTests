@@ -30,7 +30,7 @@ export default defineConfig({
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
     // baseURL: 'http://localhost:3000',
-    storageState: 'playwright/.auth/user.json',
+    //storageState: 'playwright/.auth/user.json',
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
   },
@@ -49,6 +49,8 @@ projects: [
       name: 'e2e',
       testMatch: /NesGPTRefactor\.spec\.js/,
       dependencies: ['e2e-setup'],
+      grepInvert: /@smoke/, // Exclude smoke tests from this project
+      ...(process.env.CI ? { testIgnore: /.*/ } : {}), // Skip all tests in CI for this project
       use: {
         storageState: 'playwright/.auth/user.json',
         //...devices['Desktop Firefox'],

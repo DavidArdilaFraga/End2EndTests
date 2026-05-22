@@ -1,4 +1,3 @@
-
 // login.ts
 import { Page } from "@playwright/test";
 
@@ -27,7 +26,4 @@ export const loginNesGPT = async (page: Page) => {
 
   // Save the session state so other tests reuse the login
   await page.context().storageState({ path: authFile });
-};
-
-
-    
+};   

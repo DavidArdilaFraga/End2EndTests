@@ -5,6 +5,10 @@ import { clickFirstElementVisible } from '../utils/General/countElements';
 import { accessAssistants, accessHistory, accessDiscoverNesGPT, accessSettings, accessPromptLibrary } from '../utils/accessMenuOptions/accessMenuOptions';
 import { clearWalkmePopover } from '../utils/accessMenuOptions/clearWalkmePopover';
 
+// Guarantees that the session is storaged only in the E2E tests
+test.use({
+    storageState: 'playwright/.auth/user.json'
+});
 
 // Helper that guarantees visibility and stability when clicking an element
 async function safeClick(locator) {
