@@ -21,7 +21,8 @@ jobs:
         path: ~/.cache/ms-playwright
         key: ${{ runner.os }}-playwright
     - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
+      timeout-minutes: 5
+      run: npx playwright install
     - name: Run Playwright tests
       run: npx playwright test
     - uses: actions/upload-artifact@v4
