@@ -24,6 +24,8 @@ jobs:
      # timeout-minutes: 5
       #run: npx playwright install
     - name: Run Playwright tests
+      env:
+        API_TOKEN: ${{ secrets.API_TOKEN }}
       run: npx playwright test
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
