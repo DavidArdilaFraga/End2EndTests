@@ -4,6 +4,7 @@ import { buildNesGPTPayload } from '../utils/smokeFunctions/PayloadNesGPT';
 import { validateBaseResponse, validateUsedTools, validateUsesAnyOfTools } from '../utils/smokeFunctions/SmokeTestValidations';
 import { saveParsedResultsAsTxt } from '../utils/smokeFunctions/nesgptReport';
 
+/*
 async function sendPromptAndParse(request, prompt, conversationId) {
   const payload = buildNesGPTPayload({
     prompt,
@@ -21,9 +22,13 @@ async function sendPromptAndParse(request, prompt, conversationId) {
     {
       headers: {
         Authorization: `Bearer ${process.env.NES_TOKEN}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        Accept: 'application/json'
       },
-      data: payload
+      data:{
+        ...payload,
+        stream: false
+      } 
     }
   );
 
@@ -41,6 +46,67 @@ async function sendPromptAndParse(request, prompt, conversationId) {
     throw new Error(`❌ Incomplete SSE response\n${raw}`);
   }
 
+  const parsed = parseNesGPTResponse(raw);
+
+  return parsed;
+}
+*/
+const delay = ms => new Promise(res => setTimeout(res, ms));
+
+async function sendPromptAndParse(request, prompt, conversationId) {
+  await delay(2000); // small delay to avoid hitting rate limits
+  const payload = buildNesGPTPayload({
+    prompt,
+    conversationId,
+    customPreferences: {
+      role: 'Dentist',
+      nesGptCustomBehaviorPrompt:
+        'Start and end ALL your responses with TEST...',
+      newChatsEnabled: false
+    }
+  });
+
+  const response = await fetch(
+    'https://nesgpt-np.genai.nestle.com/api/conversations',
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.NES_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`❌ HTTP ${response.status}`);
+  }
+
+  // ✅ Leer STREAM real (SSE)
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder('utf-8');
+
+  let raw = '';
+
+  try{
+    while (true) {
+    const { done, value } = await reader.read();
+
+    if (done) break;
+
+    raw += decoder.decode(value, { stream: true });
+
+    // ✅ Salir cuando llega el final del SSE
+    if (raw.includes('[DONE]')) break;
+    }
+  } catch (err) {
+    console.warn('Stream interrupted, using partial data');
+  }
+
+  // opcional: cerrar stream
+  reader.cancel();
+
+  // ✅ Parsear como antes
   const parsed = parseNesGPTResponse(raw);
 
   return parsed;
