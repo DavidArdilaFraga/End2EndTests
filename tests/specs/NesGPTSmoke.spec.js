@@ -51,6 +51,7 @@ async function sendPromptAndParse(request, prompt, conversationId) {
   return parsed;
 }
 */
+console.log('Token value: Bearer ', process.env.NES_TOKEN);
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
 async function sendPromptAndParse(request, prompt, conversationId) {
@@ -190,7 +191,7 @@ test.describe('NesGPT API Smoke Tests', () => {
                 }
             },
             {
-                text: "Who is the latest Nespresso ambassador? Search it using internal sources",
+                text: "Who is the latest Nespresso ambassador?",
                 expectations: {
                     mustUseTools: ['nestle_documents_from_sharepoint']
                 }
