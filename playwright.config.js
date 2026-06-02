@@ -42,6 +42,8 @@ projects: [
     {
       name: 'e2e-setup',
       testMatch: /auth\.setup\.ts/,
+      grepInvert: /@smoke/, // Exclude smoke tests from this project
+      ...(process.env.CI ? { testIgnore: /.*/ } : {}), // Skip all tests in CI for this project
     },
 
     // 🧪 E2E tests (requieren login)
