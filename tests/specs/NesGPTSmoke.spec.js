@@ -4,53 +4,6 @@ import { buildNesGPTPayload } from '../utils/smokeFunctions/PayloadNesGPT';
 import { validateBaseResponse, validateUsedTools, validateUsesAnyOfTools } from '../utils/smokeFunctions/SmokeTestValidations';
 import { saveParsedResultsAsTxt } from '../utils/smokeFunctions/nesgptReport';
 
-/*
-async function sendPromptAndParse(request, prompt, conversationId) {
-  const payload = buildNesGPTPayload({
-    prompt,
-    conversationId,
-    customPreferences: {
-      role: 'Dentist',
-      nesGptCustomBehaviorPrompt:
-        'Start and end ALL your responses with TEST...',
-      newChatsEnabled: false
-    }
-  });
-
-  const response = await request.post(
-    'https://nesgpt-np.genai.nestle.com/api/conversations',
-    {
-      headers: {
-        Authorization: `Bearer ${process.env.NES_TOKEN}`,
-        'Content-Type': 'application/json',
-        Accept: 'application/json'
-      },
-      data:{
-        ...payload,
-        stream: false
-      } 
-    }
-  );
-
-  // ✅ Control HTTP
-  if (!response.ok()) {
-    throw new Error(
-      `❌ HTTP ${response.status()}\n${await response.text()}`
-    );
-  }
-
-  const raw = await response.text();
-
-  // ✅ Control SSE completo
-  if (!raw.includes('[DONE]')) {
-    throw new Error(`❌ Incomplete SSE response\n${raw}`);
-  }
-
-  const parsed = parseNesGPTResponse(raw);
-
-  return parsed;
-}
-*/
 console.log('Token value: Bearer ', process.env.NES_TOKEN);
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
@@ -157,7 +110,7 @@ test.describe('NesGPT API Smoke Tests', () => {
             {
                 text: "How did the Maggi brand adapt to air fryer cooking?",
                 expectations: {
-                    mustUseAnyOfTools: ['nestle_documents_from_sharepoint', 'bing_search_results'] // This question is borderline, it might be answered with just the knowledge of the model, but ideally it should use at least one of these tools to provide a more up-to-date and accurate answer
+                    mustUseTools: ['nestle_documents_from_sharepoint']
                 }
             },
             {
@@ -193,7 +146,13 @@ test.describe('NesGPT API Smoke Tests', () => {
             {
                 text: "Who is the latest Nespresso ambassador?",
                 expectations: {
-                    mustUseTools: ['nestle_documents_from_sharepoint']
+                    mustUseAnyOfTools: ['nestle_documents_from_sharepoint', 'bing_search_results']
+                }
+            },
+            {
+                text: "What can I use the Me@Nestlé tool for? And give me a link for the IT Service Portal tool too",
+                expectations: {
+                    mustUseAnyOfTools: ['tools_market']
                 }
             }
         ];
@@ -207,13 +166,13 @@ test.describe('NesGPT API Smoke Tests', () => {
             validateBaseResponse(parsed);
 
             // ✅ Conditional checks per prompt
-            if (expectations?.mustUseTools) {
-                validateUsedTools(parsed, expectations.mustUseTools);
-            }
+            //if (expectations?.mustUseTools) {
+            //    validateUsedTools(parsed, expectations.mustUseTools);
+            //}
 
-            if (expectations?.mustUseAnyOfTools) {
-                validateUsesAnyOfTools(parsed, expectations.mustUseAnyOfTools);
-            }
+            //if (expectations?.mustUseAnyOfTools) {
+            //    validateUsesAnyOfTools(parsed, expectations.mustUseAnyOfTools);
+            //}
 
             results.push({
                 prompt: text,

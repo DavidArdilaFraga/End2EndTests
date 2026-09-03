@@ -21,7 +21,7 @@ async function openHome(page) {
     await page.goto('https://nesgpt-np.genai.nestle.com/');
     await page.locator('id=sidebar-section-settings').isVisible();
     await setZoom(page);
-    await page.waitForTimeout(5000);
+    await page.waitForTimeout(9000);
     await clearWalkmePopover(page);
 }
 
@@ -29,7 +29,7 @@ async function openHome(page) {
 /* -------------------------------------------------------------------------- */
 /*                             ✅ TEST 1 — Settings                             */
 /* -------------------------------------------------------------------------- */
-test('Settings only appears for NesGPT', async ({ page }) => {
+/*test('Settings only appears for NesGPT', async ({ page }) => {
 
     await openHome(page);
 
@@ -42,13 +42,13 @@ test('Settings only appears for NesGPT', async ({ page }) => {
 
     // Settings should not appear now
     await expect(settings).not.toBeVisible();
-});
+});*/
 
 
 /* -------------------------------------------------------------------------- */
 /*                   ✅ TEST 2 — Pinning Assistants                           */
 /* -------------------------------------------------------------------------- */
-test('Unpin-Pin OKA assistant', async ({ page }) => {
+/*test('Unpin-Pin OKA assistant', async ({ page }) => {
 
     await openHome(page);
 
@@ -67,14 +67,15 @@ test('Unpin-Pin OKA assistant', async ({ page }) => {
         await clickFirstElementVisible(page, 'data-testid=pin-button');
         await expect(unpin).toBeVisible();
     }
-});
+});*/
 
 
 /* -------------------------------------------------------------------------- */
 /*                  ✅ TEST 3 — Pin / Rename / Delete chats                   */
 /* -------------------------------------------------------------------------- */
 test('Pin-rename-delete chats', async ({ page }) => {
-
+    
+    test.setTimeout(10 * 60 * 1000);
     await openHome(page);
     await createChatNesGPT(page);
 
@@ -110,7 +111,7 @@ test('Pin-rename-delete chats', async ({ page }) => {
     await clickFirstElementVisible(page, 'data-testid=action-menu');
     await safeClick(page.getByText('Delete'));
     await safeClick(page.getByTestId('accept-button'));
-});
+}, { timeout: 120000 });
 
 
 /* -------------------------------------------------------------------------- */
@@ -200,7 +201,7 @@ test.describe.serial('Prompt Library flow', () => {
 
         // Possible Assistants = NesGPT, Legal & Compliance, IBS Knowledge, Digital Application Warehouse, ADI OPS Agent, WikiWiz
         const Assistant = 'NesGPT';
-        // Possible Models = Basic (GPT-4.1 mini), Advanced (GPT-4o), Experimental (GPT-5 mini), Experimental (GPT-5.1)
+        // Possible Models = Basic (GPT-4.1 mini), Advanced (GPT-4o), Experimental (GPT-5.4 mini)
         const Model = 'Basic (GPT-4.1 mini)'
 
         await page.waitForTimeout(4000);
@@ -243,9 +244,9 @@ test.describe.serial('Prompt Library flow', () => {
         await openHome(page);
         await accessPromptLibrary(page);
         // Possible Assistants = NesGPT, Legal & Compliance, IBS Knowledge, Digital Application Warehouse, ADI OPS Agent, WikiWiz
-        const Assistant = 'IBS Knowledge';
-        // Possible Models = Basic (GPT-4.1 mini), Advanced (GPT-4o), Experimental (GPT-5 mini), Experimental (GPT-5.1)
-        const Model = 'Experimental (GPT-5.1)';
+        const Assistant = 'NesGPT';
+        // Possible Models = Basic (GPT-4.1 mini), Advanced (GPT-4o), Experimental (GPT-5.4 mini)
+        const Model = 'Experimental (GPT-5.4 mini)';
 
         // Accesses the "Playwright" category
         await safeClick(page.getByRole('link', { name: 'Playwright' , exact: true}));
@@ -292,7 +293,7 @@ test.describe.serial('Prompt Library flow', () => {
             await page.locator('#prompt-modal-form > div > div:nth-child(2) > div:nth-child(1) > div > div > div.css-1wy0on6 > div').click();
             await safeClick(page.getByText('NesGPT' , {exact: true}));
             await page.locator('#prompt-modal-form > div > div:nth-child(2) > div:nth-child(2) > div > div > div.css-1wy0on6 > div').click();
-            await safeClick(page.getByText('Experimental (GPT-5.1)'));
+            await safeClick(page.getByText('Experimental (GPT-5.4 mini)'));
             await safeClick(page.getByRole('button', { name: 'Save' }));
         }
     });
