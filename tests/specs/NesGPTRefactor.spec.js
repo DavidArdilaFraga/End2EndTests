@@ -1,5 +1,9 @@
-// This JS spec was migrated to TypeScript at tests/specs/NesGPTRefactor.spec.ts
-// Kept as a placeholder to avoid duplicate test discovery. See the .ts file for the canonical tests.
+import { test, expect } from '@playwright/test';
+import { setZoom } from '../utils/General/setZoom';
+import { createChatNesGPT } from '../utils/General/createTestChat';
+import { clickFirstElementVisible } from '../utils/General/countElements';
+import { accessAssistants, accessHistory, accessDiscoverNesGPT, accessSettings, accessPromptLibrary } from '../utils/accessMenuOptions/accessMenuOptions';
+import { clearWalkmePopover } from '../utils/accessMenuOptions/clearWalkmePopover';
 
 // Guarantees that the session is storaged only in the E2E tests
 test.use({
@@ -12,15 +16,22 @@ async function safeClick(locator) {
     await locator.click();
 }
 
-// Helper to navigate and wait for stability removed — use fixture-provided `home.open()`
+// Helper to navigate and wait for stability
+async function openHome(page) {
+    await page.goto('https://nesgpt-np.genai.nestle.com/');
+    await page.locator('id=sidebar-section-settings').isVisible();
+    await setZoom(page);
+    await page.waitForTimeout(5000);
+    await clearWalkmePopover(page);
+}
 
 
 /* -------------------------------------------------------------------------- */
 /*                             ✅ TEST 1 — Settings                             */
 /* -------------------------------------------------------------------------- */
-test('Settings only appears for NesGPT', async ({ page, home, sidebar }) => {
+test('Settings only appears for NesGPT', async ({ page }) => {
 
-    await home.open();
+    await openHome(page);
 
     const settings = page.locator('#sidebar-section-settings');
     await expect(settings).toBeVisible();
@@ -37,11 +48,11 @@ test('Settings only appears for NesGPT', async ({ page, home, sidebar }) => {
 /* -------------------------------------------------------------------------- */
 /*                   ✅ TEST 2 — Pinning Assistants                           */
 /* -------------------------------------------------------------------------- */
-test('Unpin-Pin OKA assistant', async ({ page, home, sidebar }) => {
+test('Unpin-Pin OKA assistant', async ({ page }) => {
 
-    await home.open();
+    await openHome(page);
 
-    await sidebar.accessAssistants();
+    await accessAssistants(page);
 
     // Unpins the OKA assistant
     const unpin = page.getByTestId('unpin-button');
@@ -53,7 +64,7 @@ test('Unpin-Pin OKA assistant', async ({ page, home, sidebar }) => {
     const pinnedFlag = page.getByText('PINNED', { exact: true });
 
     if (await pinnedFlag.isHidden()) {
-        await sidebar.clickFirstElementVisible('data-testid=pin-button');
+        await clickFirstElementVisible(page, 'data-testid=pin-button');
         await expect(unpin).toBeVisible();
     }
 });
@@ -62,18 +73,18 @@ test('Unpin-Pin OKA assistant', async ({ page, home, sidebar }) => {
 /* -------------------------------------------------------------------------- */
 /*                  ✅ TEST 3 — Pin / Rename / Delete chats                   */
 /* -------------------------------------------------------------------------- */
-test('Pin-rename-delete chats', async ({ page, home, sidebar, chat }) => {
+test('Pin-rename-delete chats', async ({ page }) => {
 
-    await home.open();
-    await chat.createChat();
+    await openHome(page);
+    await createChatNesGPT(page);
 
     await safeClick(page.getByText('New chat'));
-    await sidebar.accessHistory();
+    await accessHistory(page);
     // Clicks the "Pinned" section to hide pinned chats
     await safeClick(page.getByText('Pinned', { exact: true }));
 
     // Clicks the 3 dots of the first chat in the "ALL" column and selects "Rename"
-    await sidebar.clickFirstElementVisible('data-testid=action-menu');
+    await clickFirstElementVisible(page, 'data-testid=action-menu');
     await safeClick(page.getByText('Rename'));
 
     // Renames the chat and accepts
@@ -82,21 +93,21 @@ test('Pin-rename-delete chats', async ({ page, home, sidebar, chat }) => {
     await safeClick(page.getByTestId('accept-button'));
 
     // Pins the chat
-    await sidebar.clickFirstElementVisible('data-testid=action-menu');
+    await clickFirstElementVisible(page, 'data-testid=action-menu');
     await safeClick(page.getByText('Pin chat'));
 
     // Clicks the "Pinned" section again to show the hidden chats
     await safeClick(page.getByText('Pinned', { exact: true }));
 
     // Unpins the chat
-    await sidebar.clickFirstElementVisible('data-testid=action-menu');
+    await clickFirstElementVisible(page, 'data-testid=action-menu');
     await safeClick(page.getByText('Unpin chat'));
 
     // Hides again the pinned chats to delete the first chat from the "ALL" column
     await safeClick(page.getByText('Pinned', { exact: true }));
 
     // Delete the first chat from the "ALL" column
-    await sidebar.clickFirstElementVisible('data-testid=action-menu');
+    await clickFirstElementVisible(page, 'data-testid=action-menu');
     await safeClick(page.getByText('Delete'));
     await safeClick(page.getByTestId('accept-button'));
 });
@@ -105,10 +116,10 @@ test('Pin-rename-delete chats', async ({ page, home, sidebar, chat }) => {
 /* -------------------------------------------------------------------------- */
 /*                        ✅ TEST 4 — Discover NesGPT                          */
 /* -------------------------------------------------------------------------- */
-test('Check Discover NesGPT sections', async ({ page, home, sidebar }) => {
+test('Check Discover NesGPT sections', async ({ page }) => {
 
-    await home.open();
-    await sidebar.accessDiscoverNesGPT();
+    await openHome(page);
+    await accessDiscoverNesGPT(page);
 
     const sections = [
         { button: 'What is NesGPT', text: 'Digital Working Hub Sharepoint' },
@@ -133,25 +144,32 @@ test('Check Discover NesGPT sections', async ({ page, home, sidebar }) => {
 /* -------------------------------------------------------------------------- */
 /*                          ✅ TEST 5 — Custom Settings                        */
 /* -------------------------------------------------------------------------- */
-test('Use custom settings', async ({ page, home, sidebar, chat, settings }) => {
+test('Use custom settings', async ({ page }) => {
 
-    await home.open();
+    await openHome(page);
 
     // Wait a bit for the page to load properly and access the Settings option and then, the preferences
     await page.waitForTimeout(4000);
-    await sidebar.accessSettings();
-    await settings.openPreferences();
+    await accessSettings(page);
+    await safeClick(page.getByRole('button', { name: 'Preferences' }));
 
-    const originalState = await settings.isPreferenceActivated();
+    const toggle = page.getByRole('switch');
+    const isActivated = await toggle.getAttribute('aria-checked') === 'true';
 
-    // Ensure preference is activated for the test
-    await settings.togglePreferenceIfNeeded(true);
+    // Checks if the toggle is activated. If it's not, activates it
+    if (!isActivated) {
+        await safeClick(toggle);
+        await safeClick(page.getByText('Submit'));
+        await expect(page.getByText('Preferences saved successfully')).toBeVisible();
+    } else {
+        await safeClick(page.getByText('Cancel'));
+    }
 
     // Sends a prompt in a new chat
-    await chat.createChat();
+    await createChatNesGPT(page);
 
     // Checks if the expected text appears in the first and last words of the response
-    const messageParagraphs = await chat.getMessageParagraphs();
+    const messageParagraphs = page.locator('#chatBox div.message-content__message.p-4 p');
 
     const first = await messageParagraphs.first().innerText();
     const last = await messageParagraphs.last().innerText();
@@ -160,18 +178,25 @@ test('Use custom settings', async ({ page, home, sidebar, chat, settings }) => {
     expect(last.endsWith('TEST')).toBe(true);
 
     // restore settings
-    await sidebar.accessSettings();
-    await settings.openPreferences();
-    await settings.togglePreferenceIfNeeded(originalState);
+    await accessSettings(page);
+    await safeClick(page.getByRole('button', { name: 'Preferences' }));
+
+    if (await toggle.getAttribute('aria-checked') === 'true') {
+        await safeClick(toggle);
+        await safeClick(page.getByText('Submit'));
+        await expect(page.getByText('Preferences saved successfully')).toBeVisible();
+    } else {
+        await safeClick(page.getByText('Cancel'));
+    }
 });
 
 /* -------------------------------------------------------------------------- */
 /*       ✅ TEST 6 — Create New Prompt from Prompt Library                     */
 /* -------------------------------------------------------------------------- */
 test.describe.serial('Prompt Library flow', () => {
-    test('Create new prompt from Prompt Library', async ({ page, home, sidebar, promptLib }) => {
-        await home.open();
-        await sidebar.accessPromptLibrary();
+    test('Create new prompt from Prompt Library', async ({ page }) => {
+        await openHome(page);
+        await accessPromptLibrary(page);
 
         // Possible Assistants = NesGPT, Legal & Compliance, IBS Knowledge, Digital Application Warehouse, ADI OPS Agent, WikiWiz
         const Assistant = 'NesGPT';
@@ -181,84 +206,145 @@ test.describe.serial('Prompt Library flow', () => {
         await page.waitForTimeout(4000);
 
         //  Clicks the "New Prompt" button
-        await page.waitForTimeout(4000);
-        await promptLib.createNewPrompt('Test Playwright', 'This is a test prompt created by Playwright automation', Assistant, Model);
+        await safeClick(page.getByRole('button', { name: 'New prompt' }));
+
+        //  Fills the prompt name
+        await page.getByPlaceholder('Give a descriptive name for this prompt').fill('Test Playwright');
+
+        //  If we want to select a different assistant than NesGPT, we do it here
+        if (Assistant !== 'NesGPT') { 
+            await safeClick(page.getByText('NesGPT'));
+            await safeClick(page.getByText(Assistant));
+        }
+
+        //  If we want to select a different model than Basic, we do it here
+        if (Model !== 'Basic (GPT-4.1 mini)') {
+            await safeClick(page.getByText('Basic (GPT-4.1 mini)'));
+            await safeClick(page.getByText(Model));
+        }
+
+        //  Changes the category from "General" to "Playwright"
+        await page.locator('#prompt-modal-form > div > div:nth-child(3) > div > div > div > div.css-1wy0on6 > div').click();
+
+        await page.getByText('Playwright').nth(2).click();
+
+        //  Fills the prompt's body
+        await page.locator('#prompt-library-markdown-editor > div > div._rootContentEditableWrapper_uazmk_1097.mdxeditor-root-contenteditable > div:nth-child(1) > div').fill('This is a test prompt created by Playwright automation');
+
+        //  Saves the prompt
+        await safeClick(page.getByRole('button', { name: 'Save' }));
 
     });
 /* -------------------------------------------------------------------------- */
 /*       ✅ TEST 7 — Edit Prompt from Prompt Library                           */
 /* -------------------------------------------------------------------------- */
-    test('Edit prompt from Prompt Library', async ({ page, home, sidebar, promptLib }) => {
+    test('Edit prompt from Prompt Library', async ({ page }) => {
 
-        await home.open();
-        await sidebar.accessPromptLibrary();
+        await openHome(page);
+        await accessPromptLibrary(page);
         // Possible Assistants = NesGPT, Legal & Compliance, IBS Knowledge, Digital Application Warehouse, ADI OPS Agent, WikiWiz
         const Assistant = 'IBS Knowledge';
         // Possible Models = Basic (GPT-4.1 mini), Advanced (GPT-4o), Experimental (GPT-5 mini), Experimental (GPT-5.1)
         const Model = 'Experimental (GPT-5.1)';
 
         // Accesses the "Playwright" category
-        await promptLib.openCategory('Playwright');
+        await safeClick(page.getByRole('link', { name: 'Playwright' , exact: true}));
 
-        // Edit the first prompt with multiple fields
-        await promptLib.editFirstPrompt({ newTitle: 'EDITED Test Playwright', assistant: Assistant, model: Model, category: 'Playwright Deletion', body: 'EDITED PROMPT' });
+        // Clicks the 3 dots at the right side of the prompt card and selects "Edit"
+        await safeClick(page.getByTitle('Modify this prompt'));
+        await safeClick(page.getByText('Edit'));
+
+        // Changes the prompt's title
+        await page.waitForTimeout(2000);
+        await page.getByPlaceholder('Give a descriptive name for this prompt').fill('EDITED Test Playwright');
+
+        // Changes the prompt's assistant
+        if (Assistant !== 'NesGPT'){
+        await page.locator('#prompt-modal-form > div > div:nth-child(2) > div:nth-child(1) > div > div > div.css-1wy0on6 > div').click();
+        await safeClick(page.getByText(Assistant));
+        }
+
+        // Changes the prompt's model, but only if the assistant is NesGPT 
+        // Because for the other assistants there is only one model available
+        if (Assistant == 'NesGPT') {
+            await safeClick(page.locator('#prompt-modal-form > div > div:nth-child(2) > div:nth-child(2) > div > div > div.css-1wy0on6 > div'));
+            await safeClick(page.getByText(Model));
+        }
+
+        // Changes the prompt's category
+        await page.locator('#prompt-modal-form > div > div:nth-child(3) > div > div > div > div.css-1wy0on6 > div').click();
+        await page.getByText('Playwright Deletion', { exact: true }).nth(1).click();
+
+        // Changes the prompt's body
+        await page.locator('#prompt-library-markdown-editor > div > div._rootContentEditableWrapper_uazmk_1097.mdxeditor-root-contenteditable > div:nth-child(1) > div').fill('EDITED PROMPT');
+
+        // Saves the changes
+        await safeClick(page.getByRole('button', { name: 'Save' }));
 
         // Accesses the "Playwright Deletion" category to check that the prompt has been moved there
-        await promptLib.openCategory('Playwright Deletion');
+        await safeClick(page.getByRole('link', { name: 'Playwright Deletion' , exact: true }));
         await expect(page.getByText('EDITED Test Playwright')).toBeVisible();
 
         // Edits the prompt again to change the assistant back to NesGPT and the model to Experimental (GPT-5.1), to make sure that the prompt is in the correct state for the next test
         if (Assistant !== 'NesGPT') {
-            await promptLib.editFirstPrompt({ assistant: 'NesGPT', model: 'Experimental (GPT-5.1)' });
+            await safeClick(page.getByTitle('Modify this prompt'));
+            await safeClick(page.getByText('Edit' , {exact: true}));
+            await page.locator('#prompt-modal-form > div > div:nth-child(2) > div:nth-child(1) > div > div > div.css-1wy0on6 > div').click();
+            await safeClick(page.getByText('NesGPT' , {exact: true}));
+            await page.locator('#prompt-modal-form > div > div:nth-child(2) > div:nth-child(2) > div > div > div.css-1wy0on6 > div').click();
+            await safeClick(page.getByText('Experimental (GPT-5.1)'));
+            await safeClick(page.getByRole('button', { name: 'Save' }));
         }
     });
 /* -------------------------------------------------------------------------- */
 /*       ✅ TEST 8 — Pin and Unpin prompt from Prompt Library                 */
 /* -------------------------------------------------------------------------- */
-    test('Pin and Unpin prompt from Prompt Library', async ({ page, home, sidebar, promptLib }) => {
+    test('Pin and Unpin prompt from Prompt Library', async ({ page }) => {
 
-        await home.open();
-        await sidebar.accessPromptLibrary();
+        await openHome(page);
+        await accessPromptLibrary(page);
 
         // Accesses the "Playwright Deletion" category
-        await promptLib.openCategory('Playwright Deletion');
+        await safeClick(page.getByRole('link', { name: 'Playwright Deletion' , exact: true }));
 
         // Pins the prompt by clicking the pin icon at the right side of the prompt card
-        await promptLib.pinFirstPrompt();
+        await safeClick(page.getByTitle('Modify this prompt'));
+        await safeClick(page.getByText('Pin prompt'));
 
         // Goes to the home page to see if the prompt appears
         await safeClick(page.getByRole('button', { name: 'New NesGPT chat' , exact: true }));
         await expect(page.getByText('Pinned Prompts')).toBeVisible();
 
         // Accesses the Pinned Prompts section and checks that the prompt is there, then unpins it
-        await sidebar.accessPromptLibrary();
+        await accessPromptLibrary(page);
         await safeClick(page.getByText('Pinned Prompts' , {exact: true}));
         await expect(page.getByText('EDITED Test Playwright')).toBeVisible();
-        await promptLib.unpinFirstPrompt();
+        await safeClick(page.getByTitle('Modify this prompt'));
+        await safeClick(page.getByText('Unpin prompt'));
 
         // Goes to the home page to check that the prompt has been removed from there
         await safeClick(page.getByRole('button', { name: 'New NesGPT chat' , exact: true }));
         await expect(page.getByText('Pinned Prompts')).not.toBeVisible();
 
         // Goes to the prompt library to check that the prompt is in the correct category
-        await sidebar.accessPromptLibrary();
-        await promptLib.openCategory('Playwright Deletion');
+        await accessPromptLibrary(page);
+        await safeClick(page.getByRole('link', { name: 'Playwright Deletion' , exact: true }));
         await expect(page.getByText('EDITED Test Playwright')).toBeVisible();
 
     });
 /* -------------------------------------------------------------------------- */
 /*       ✅ TEST 9 — Delete prompt from Prompt Library                 */
 /* -------------------------------------------------------------------------- */
-    test('Delete prompt from Prompt Library', async ({ page, home, sidebar, promptLib }) => {
+    test('Delete prompt from Prompt Library', async ({ page }) => {
 
-        await home.open();
-        await sidebar.accessPromptLibrary();
+        await openHome(page);
+        await accessPromptLibrary(page);
 
         // Accesses the "Playwright Deletion" category
-        await promptLib.openCategory('Playwright Deletion');
+        await safeClick(page.getByRole('link', { name: 'Playwright Deletion' , exact: true }));
 
         // Deletes the prompt by clicking the 3 dots at the right side of the prompt card and selecting "Delete"
-        await promptLib.deleteFirstPrompt();
+        await safeClick(page.getByTitle('Modify this prompt'));
         await safeClick(page.getByText('Delete'));
         await safeClick(page.getByText('Delete' , { exact: true }));
     });

@@ -1,5 +1,8 @@
-// This JS spec was migrated to TypeScript at tests/specs/NesGPTSmoke.spec.ts
-// Kept as a placeholder to avoid duplicate test discovery. See the .ts file for the canonical tests.
+const { test, expect } = require('@playwright/test');
+import { parseNesGPTResponse } from '../utils/smokeFunctions/parseNesGPTResponse';
+import { buildNesGPTPayload } from '../utils/smokeFunctions/PayloadNesGPT';
+import { validateBaseResponse, validateUsedTools, validateUsesAnyOfTools } from '../utils/smokeFunctions/SmokeTestValidations';
+import { saveParsedResultsAsTxt } from '../utils/smokeFunctions/nesgptReport';
 
 /*
 async function sendPromptAndParse(request, prompt, conversationId) {

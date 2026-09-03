@@ -1,28 +1,47 @@
-import { Page } from "@playwright/test";
-import { Sidebar } from '../../pageObjects/Sidebar';
+import { expect, Page } from "@playwright/test";
+//import { StatementSync } from "node:sqlite";
 
-// Backwards-compatible wrappers that delegate to the new Sidebar Page Object
+/**
+ * Generic helper function to open a sidebar section by its label.
+ *  - Waits for the button to be visible before clicking
+ *  - Safe clicks the button
+ *  - Waits for the sidebar panel to be visible after clicking
+ */
+async function openSidebarSection(page: Page, label: string) {
+    const button = page.getByRole("button", { name: label, exact: true });
+
+    // Wait for the button to appear before interacting
+    await expect(button).toBeVisible();
+    await button.click();
+
+    // Sidebar panel: stable selector
+    const sidebarPanel = page.locator("aside").locator("div:visible");
+
+    // Wait for the sidebar panel to be visible
+    await expect(sidebarPanel.first()).toBeVisible();
+
+}
+
+/* -------------------------------------------------------------------------- */
+/*                    ✅ Sidebar functions — Clean and robust                 */
+/* -------------------------------------------------------------------------- */
+
 export const accessAssistants = async (page: Page) => {
-    const sidebar = new Sidebar(page);
-    await sidebar.accessAssistants();
+    await openSidebarSection(page, "Assistants");
 };
 
 export const accessHistory = async (page: Page) => {
-    const sidebar = new Sidebar(page);
-    await sidebar.accessHistory();
+    await openSidebarSection(page, "Chat History");
 };
 
 export const accessDiscoverNesGPT = async (page: Page) => {
-    const sidebar = new Sidebar(page);
-    await sidebar.accessDiscoverNesGPT();
+    await openSidebarSection(page, "Discover NesGPT");
 };
 
 export const accessSettings = async (page: Page) => {
-    const sidebar = new Sidebar(page);
-    await sidebar.accessSettings();
+    await openSidebarSection(page, "Settings");
 };
 
 export const accessPromptLibrary = async (page: Page) => {
-    const sidebar = new Sidebar(page);
-    await sidebar.accessPromptLibrary();
+    await openSidebarSection(page, "Prompt Library");
 };
