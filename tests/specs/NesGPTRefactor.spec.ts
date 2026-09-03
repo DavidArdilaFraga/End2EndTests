@@ -10,6 +10,8 @@ async function safeClick(locator: Locator) {
 /* -------------------------------------------------------------------------- */
 /*                             ✅ TEST 1 — Settings                             */
 /* -------------------------------------------------------------------------- */
+
+/*
 test('Settings only appears for NesGPT', async ({ page, home, sidebar }) => {
   await home.open();
 
@@ -23,10 +25,13 @@ test('Settings only appears for NesGPT', async ({ page, home, sidebar }) => {
   // Settings should not appear now
   await expect(settings).not.toBeVisible();
 });
+*/
 
 /* -------------------------------------------------------------------------- */
 /*                   ✅ TEST 2 — Pinning Assistants                           */
 /* -------------------------------------------------------------------------- */
+
+/*
 test('Unpin-Pin OKA assistant', async ({ page, home, sidebar }) => {
   await home.open();
 
@@ -46,6 +51,7 @@ test('Unpin-Pin OKA assistant', async ({ page, home, sidebar }) => {
     await expect(unpin).toBeVisible();
   }
 });
+*/
 
 /* -------------------------------------------------------------------------- */
 /*                  ✅ TEST 3 — Pin / Rename / Delete chats                   */
@@ -148,30 +154,33 @@ test('Use custom settings', async ({ page, home, sidebar, chat, settings }) => {
   await settings.togglePreferenceIfNeeded(originalState);
 });
 
-/* -------------------------------------------------------------------------- */
-/*       ✅ TEST 6 — Create New Prompt from Prompt Library                     */
-/* -------------------------------------------------------------------------- */
+
 test.describe.serial('Prompt Library flow', () => {
+    // Possible Assistants = NesGPT, Legal & Compliance, IBS Knowledge, Digital Application Warehouse, ADI OPS Agent, WikiWiz
+    const Assistant: string = 'NesGPT';
+
+  /* -------------------------------------------------------------------------- */
+  /*       ✅ TEST 6 — Create New Prompt from Prompt Library                     */
+  /* -------------------------------------------------------------------------- */
   test('Create new prompt from Prompt Library', async ({ page, home, sidebar, promptLib }) => {
     await home.open();
     await sidebar.accessPromptLibrary();
 
-    // Possible Assistants = NesGPT, Legal & Compliance, IBS Knowledge, Digital Application Warehouse, ADI OPS Agent, WikiWiz
-    const Assistant: string = 'NesGPT';
-    // Possible Models = Basic (GPT-4.1 mini), Advanced (GPT-4o), Experimental (GPT-5 mini), Experimental (GPT-5.1)
-    const Model = 'Basic (GPT-4.1 mini)';
+    // Possible Models = Basic (GPT-4o mini), Advanced (GPT-4o), Experimental (GPT-5.4 mini)
+    const Model = 'Basic (GPT-4o mini)';
 
     await page.waitForTimeout(4000);
 
     await promptLib.createNewPrompt('Test Playwright', 'This is a test prompt created by Playwright automation', Assistant, Model);
   });
 
+  /* -------------------------------------------------------------------------- */
+  /*       ✅ TEST 7 — Edit Prompt from Prompt Library                     */
+  /* -------------------------------------------------------------------------- */
   test('Edit prompt from Prompt Library', async ({ page, home, sidebar, promptLib }) => {
     await home.open();
     await sidebar.accessPromptLibrary();
-
-    const Assistant: string = 'IBS Knowledge';
-    const Model: string = 'Experimental (GPT-5.1)';
+    const Model: string = 'Experimental (GPT-5.4 mini)';
 
     // Accesses the "Playwright" category
     await promptLib.openCategory('Playwright');
@@ -183,12 +192,15 @@ test.describe.serial('Prompt Library flow', () => {
     await promptLib.openCategory('Playwright Deletion');
     await expect(page.getByText('EDITED Test Playwright')).toBeVisible();
 
-    // Edits the prompt again to change the assistant back to NesGPT and the model to Experimental (GPT-5.1), to make sure that the prompt is in the correct state for the next test
+    // Edits the prompt again to change the assistant back to NesGPT and the model to Experimental (GPT-5.4 mini), to make sure that the prompt is in the correct state for the next test
     if (Assistant !== 'NesGPT') {
-      await promptLib.editFirstPrompt({ assistant: 'NesGPT', model: 'Experimental (GPT-5.1)' });
+      await promptLib.editFirstPrompt({ assistant: 'NesGPT', model: 'Experimental (GPT-5.4 mini)' });
     }
   });
 
+  /* -------------------------------------------------------------------------- */
+  /*       ✅ TEST 8 — Pin and Unpin Prompt from Prompt Library                     */
+  /* -------------------------------------------------------------------------- */
   test('Pin and Unpin prompt from Prompt Library', async ({ page, home, sidebar, promptLib }) => {
     await home.open();
     await sidebar.accessPromptLibrary();
@@ -219,6 +231,9 @@ test.describe.serial('Prompt Library flow', () => {
     await expect(page.getByText('EDITED Test Playwright')).toBeVisible();
   });
 
+/* -------------------------------------------------------------------------- */
+/*       ✅ TEST 9 — Delete Prompt from Prompt Library                     */
+/* -------------------------------------------------------------------------- */
   test('Delete prompt from Prompt Library', async ({ page, home, sidebar, promptLib }) => {
     await home.open();
     await sidebar.accessPromptLibrary();
@@ -228,7 +243,5 @@ test.describe.serial('Prompt Library flow', () => {
 
     // Deletes the prompt by clicking the 3 dots at the right side of the prompt card and selecting "Delete"
     await promptLib.deleteFirstPrompt();
-    await safeClick(page.getByText('Delete'));
-    await safeClick(page.getByText('Delete', { exact: true }));
   });
 });

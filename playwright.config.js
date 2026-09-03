@@ -50,7 +50,7 @@ projects: [
     // 🧪 E2E tests (requieren login)
     {
       name: 'e2e',
-    testMatch: /NesGPTRefactor\.spec\.(js|ts)/,
+    testMatch: /NesGPTRefactor\.spec\.ts/,
       dependencies: ['e2e-setup'],
       grepInvert: /@smoke/, // Exclude smoke tests from this project
       ...(process.env.CI ? { testIgnore: /.*/ } : {}), // Skip all tests in CI for this project
@@ -65,7 +65,7 @@ projects: [
     // 🚀 Smoke / API tests (NO login)
     {
       name: 'smoke',
-    testMatch: /NesGPTSmoke\.spec\.(js|ts)/,
+    testMatch: /NesGPTSmoke\.spec\.ts/,
     },
   ],
 

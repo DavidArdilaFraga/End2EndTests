@@ -22,7 +22,7 @@ async function sendPromptAndParse(request: any, prompt: string, conversationId: 
   const response = await fetch('https://nesgpt-np.genai.nestle.com/api/conversations', {
     method: 'POST',
     headers: {
-      Authorization: `******`,
+      Authorization: `Bearer ${process.env.NES_TOKEN}`,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify(payload)

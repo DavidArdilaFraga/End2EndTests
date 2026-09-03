@@ -12,7 +12,7 @@ export class PromptLibraryPage {
     await expect(this.page.getByRole('link', { name: 'Playwright', exact: true })).toBeDefined();
   }
 
-  async createNewPrompt(name: string, body: string, assistant = 'NesGPT', model = 'Basic (GPT-4.1 mini)') {
+  async createNewPrompt(name: string, body: string, assistant = 'NesGPT', model = 'Basic (GPT-4o mini)') {
     await this.page.getByRole('button', { name: 'New prompt' }).click();
     await this.page.getByPlaceholder('Give a descriptive name for this prompt').fill(name);
 
@@ -21,8 +21,8 @@ export class PromptLibraryPage {
       await this.page.getByText(assistant).click();
     }
 
-    if (model !== 'Basic (GPT-4.1 mini)') {
-      await this.page.getByText('Basic (GPT-4.1 mini)').click();
+    if (model !== 'Basic (GPT-4o mini)') {
+      await this.page.getByText('Basic (GPT-4o mini)').click();
       await this.page.getByText(model).click();
     }
 
