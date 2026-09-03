@@ -1,8 +1,5 @@
-const { test, expect } = require('@playwright/test');
-import { parseNesGPTResponse } from '../utils/smokeFunctions/parseNesGPTResponse';
-import { buildNesGPTPayload } from '../utils/smokeFunctions/PayloadNesGPT';
-import { validateBaseResponse, validateUsedTools, validateUsesAnyOfTools } from '../utils/smokeFunctions/SmokeTestValidations';
-import { saveParsedResultsAsTxt } from '../utils/smokeFunctions/nesgptReport';
+// This JS spec was migrated to TypeScript at tests/specs/NesGPTSmoke.spec.ts
+// Kept as a placeholder to avoid duplicate test discovery. See the .ts file for the canonical tests.
 
 console.log('Token value: Bearer ', process.env.NES_TOKEN);
 const delay = ms => new Promise(res => setTimeout(res, ms));

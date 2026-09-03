@@ -7,7 +7,9 @@ import path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 test('Auth setup - login and save session', async () => {
-  const browser = await chromium.launch({ headless: false }); // MFA manual
+  // Default to headless; set HEADLESS_SETUP=false to run headed
+  const headless = process.env.HEADLESS_SETUP ? process.env.HEADLESS_SETUP === 'true' : true;
+  const browser = await chromium.launch({ headless });
   const page = await browser.newPage();
 
   await loginNesGPT(page);
