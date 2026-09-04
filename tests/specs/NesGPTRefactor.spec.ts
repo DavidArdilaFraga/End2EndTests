@@ -1,11 +1,5 @@
 import test, { expect } from '../test-fixtures/pomTest';
-import type { Locator } from '@playwright/test';
-
-// Helper that guarantees visibility and stability when clicking an element
-async function safeClick(locator: Locator) {
-  await expect(locator).toBeVisible();
-  await locator.click();
-}
+import { safeClick } from '../utils/General/safeClick';
 
 /* -------------------------------------------------------------------------- */
 /*                             ✅ TEST 1 — Settings                             */

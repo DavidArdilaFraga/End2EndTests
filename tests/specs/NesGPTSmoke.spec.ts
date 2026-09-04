@@ -1,61 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { parseNesGPTResponse } from '../utils/smokeFunctions/parseNesGPTResponse';
-import { buildNesGPTPayload } from '../utils/smokeFunctions/PayloadNesGPT';
 import { validateBaseResponse, validateUsedTools, validateUsesAnyOfTools } from '../utils/smokeFunctions/SmokeTestValidations';
 import { saveParsedResultsAsTxt } from '../utils/smokeFunctions/nesgptReport';
-
-console.log('Token value: Bearer ', process.env.NES_TOKEN);
-const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
-
-async function sendPromptAndParse(request: any, prompt: string, conversationId: string | null) {
-  await delay(2000); // small delay to avoid hitting rate limits
-  const payload = buildNesGPTPayload({
-    prompt,
-    conversationId,
-    customPreferences: {
-      role: 'Dentist',
-      nesGptCustomBehaviorPrompt: 'Start and end ALL your responses with TEST...',
-      newChatsEnabled: false
-    }
-  });
-
-  const response = await fetch('https://nesgpt-np.genai.nestle.com/api/conversations', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${process.env.NES_TOKEN}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(payload)
-  });
-
-  if (!response.ok) {
-    throw new Error(`❌ HTTP ${response.status}`);
-  }
-
-  const reader = response.body!.getReader();
-  const decoder = new TextDecoder('utf-8');
-
-  let raw = '';
-
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      raw += decoder.decode(value, { stream: true });
-      if (raw.includes('[DONE]')) break;
-    }
-  } catch (err) {
-    console.warn('Stream interrupted, using partial data');
-  }
-
-  reader.cancel();
-
-  const parsed = parseNesGPTResponse(raw);
-  return parsed;
-}
+import { sendPromptAndParse } from '../utils/smokeFunctions/sendPromptAndParse';
 
 test.describe('NesGPT API Smoke Tests', () => {
-
   test('API health check returns 200', async ({ request }) => {
     const response = await request.get('https://nesgpt-np.genai.nestle.com/api/conversations');
     const responseBody = await response.text();
@@ -63,7 +11,7 @@ test.describe('NesGPT API Smoke Tests', () => {
     expect(response.status()).toBe(200);
   });
 
-  test('Send multiple prompts to NesGPT and validate responses', async ({ request }) => {
+  test('Send multiple prompts to NesGPT and validate responses', async () => {
     test.setTimeout(10 * 60 * 1000);
     const results: Array<any> = [];
 
@@ -82,7 +30,7 @@ test.describe('NesGPT API Smoke Tests', () => {
     ];
 
     for (const { text, expectations } of prompts) {
-      const parsed = await sendPromptAndParse(request, text, null);
+      const parsed = await sendPromptAndParse(text, null);
       console.log('Parsed response:', parsed);
 
       validateBaseResponse(parsed);
@@ -100,5 +48,4 @@ test.describe('NesGPT API Smoke Tests', () => {
 
     saveParsedResultsAsTxt(results);
   });
-
 });
